@@ -1,0 +1,35 @@
+[
+    {
+        "title": "ubuntu-24.04.1-desktop-amd64.iso",
+        "size": 6203355136,
+        "seeders": 1200,
+        "indexer": "Internet Archive",
+        "magnetUrl": "magnet:?xt=urn:btih:0000000000000000000000000000000000000001&dn=ubuntu-24.04.1-desktop-amd64.iso"
+    },
+    {
+        "title": "ubuntu-24.04-live-server-amd64.iso",
+        "size": 2754981888,
+        "seeders": 800,
+        "indexer": "Internet Archive",
+        "downloadUrl": "http://localhost:9696/1/download?link=abc"
+    },
+    {
+        "title": "ubuntu-22.04-desktop-amd64.iso",
+        "size": 4071903232,
+        "seeders": 0,
+        "indexer": "Internet Archive",
+        "magnetUrl": "magnet:?xt=urn:btih:0000000000000000000000000000000000000003"
+    },
+    {
+        "title": "ubuntu-wallpapers.zip",
+        "size": 52428800,
+        "indexer": "Internet Archive",
+        "magnetUrl": "magnet:?xt=urn:btih:0000000000000000000000000000000000000004"
+    },
+    {
+        "title": "ubuntu-docs-broken-entry",
+        "size": 1024,
+        "seeders": 50,
+        "indexer": "Internet Archive"
+    }
+]
