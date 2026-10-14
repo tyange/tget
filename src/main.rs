@@ -1,7 +1,8 @@
 use std::fs;
 use std::io::{self, Write};
+use std::path::PathBuf;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use serde::Deserialize;
 
@@ -27,6 +28,16 @@ struct Args {
     /// 결과만 보여주고 추가하지 않는다
     #[arg(long)]
     dry_run: bool,
+
+    /// Prowlarr 대신 로컬 JSON 파일에서 검색 결과를 읽는다 (개발용)
+    #[arg(long)]
+    fixture: Option<PathBuf>,
+
+    #[arg(long, env = "PROWLARR_URL", default_value = "http://localhost:9696")]
+    prowlarr_url: String,
+
+    #[arg(long, env = "PROWLARR_API_KEY", hide_env_values = true)]
+    prowlarr_api_key: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,10 +66,38 @@ impl Hit {
     }
 }
 
-fn main() -> Result<()> {
+async fn search(http: &reqwest::Client, args: &Args) -> Result<Vec<Hit>> {
+    if let Some(path) = &args.fixture {
+        let raw = fs::read_to_string(path)
+            .with_context(|| format!("{} 을 읽지 못했어요", path.display()))?;
+        return Ok(serde_json::from_str(&raw)?);
+    }
+
+    let api_key = args
+        .prowlarr_api_key
+        .as_deref()
+        .context("PROWLARR_API_KEY 환경변수나 --prowlarr-api-key 가 필요해요")?;
+    let url = format!("{}/api/v1/search", args.prowlarr_url.trim_end_matches('/'));
+
+    http.get(url)
+        .header("X-Api-Key", api_key)
+        .query(&[("query", args.query.as_str()), ("type", "search")])
+        .send()
+        .await
+        .context("Prowlarr에 연결하지 못했어요")?
+        .error_for_status()
+        .context("Prowlarr가 요청을 거절했어요. API 키를 확인하세요")?
+        .json()
+        .await
+        .context("Prowlarr 응답을 해석하지 못했어요")
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = Args::parse();
-    let raw = fs::read_to_string("fixtures/search.json")?;
-    let mut hits: Vec<Hit> = serde_json::from_str(&raw)?;
+    let http = reqwest::Client::builder().cookie_store(true).build()?;
+
+    let mut hits = search(&http, &args).await?;
 
     hits.retain(|h| h.seeders() >= args.min_seeders && h.link().is_some());
     hits.sort_by(|a, b| b.seeders().cmp(&a.seeders()));
