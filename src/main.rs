@@ -38,6 +38,19 @@ struct Args {
 
     #[arg(long, env = "PROWLARR_API_KEY", hide_env_values = true)]
     prowlarr_api_key: Option<String>,
+
+    /// 저장 경로 (qBittorrent 기준)
+    #[arg(long)]
+    save_path: Option<String>,
+
+    #[arg(long, env = "QBIT_URL", default_value = "http://localhost:8080")]
+    qbit_url: String,
+
+    #[arg(long, env = "QBIT_USER", default_value = "admin")]
+    qbit_user: String,
+
+    #[arg(long, env = "QBIT_PASS", hide_env_values = true, default_value = "")]
+    qbit_pass: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -125,8 +138,44 @@ async fn main() -> Result<()> {
         }
     };
 
-    println!("→ 선택: {}", hit.title);
-    println!("  링크: {}", hit.link().unwrap());
+    add_to_qbit(&http, &args, hit.link().unwrap()).await?;
+    println!("→ qBittorrent에 추가됨: {}", hit.title);
+    Ok(())
+}
+
+async fn add_to_qbit(http: &reqwest::Client, args: &Args, link: &str) -> Result<()> {
+    let base = args.qbit_url.trim_end_matches('/');
+
+    let body = http
+        .post(format!("{base}/api/v2/auth/login"))
+        .header("Referer", base)
+        .form(&[("username", &args.qbit_user), ("password", &args.qbit_pass)])
+        .send()
+        .await
+        .context("qBittorrent에 연결하지 못했어요")?
+        .text()
+        .await?;
+    if body.trim() != "Ok." {
+        bail!("qBittorrent 로그인에 실패했어요. 사용자 이름과 비밀번호를 확인하세요");
+    }
+
+    let mut form = vec![("urls", link.to_string())];
+    if let Some(p) = &args.save_path {
+        form.push(("savepath", p.clone()));
+    }
+    let res = http
+        .post(format!("{base}/api/v2/torrents/add"))
+        .header("Referer", base)
+        .form(&form)
+        .send()
+        .await
+        .context("qBittorrent에 토렌트를 추가하지 못했어요")?;
+    let status = res.status();
+    let body = res.text().await?;
+    if !status.is_success() || body.contains("Fails") {
+        bail!("qBittorrent가 추가를 거절했어요 ({status}): {}", body.trim());
+    }
+
     Ok(())
 }
 
