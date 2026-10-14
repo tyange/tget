@@ -29,6 +29,10 @@ pub struct Args {
     #[arg(long)]
     pub fixture: Option<PathBuf>,
 
+    /// 추가한 뒤 다운로드 진행률을 지켜본다 (Ctrl+C 로 그만 보기)
+    #[arg(short, long)]
+    pub watch: bool,
+
     /// 설정 파일 경로 (기본: $XDG_CONFIG_HOME/tget/config.toml 또는 ~/.config/tget/config.toml)
     #[arg(long)]
     pub config: Option<PathBuf>,

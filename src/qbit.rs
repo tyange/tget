@@ -1,4 +1,16 @@
 use anyhow::{Context, Result, bail};
+use serde::Deserialize;
+
+/// `/api/v2/torrents/info` 응답의 한 항목 (쓰는 칸만).
+#[derive(Debug, Deserialize)]
+pub struct TorrentInfo {
+    pub name: String,
+    /// 0.0 ~ 1.0
+    pub progress: f64,
+    /// 초당 바이트
+    pub dlspeed: u64,
+    pub state: String,
+}
 
 /// 로그인을 마친 qBittorrent 클라이언트. `login` 에 성공해야만 만들 수 있다.
 pub struct Qbit {
@@ -26,10 +38,13 @@ impl Qbit {
         Ok(Self { http, base })
     }
 
-    pub async fn add(&self, link: &str, save_path: Option<&str>) -> Result<()> {
+    pub async fn add(&self, link: &str, save_path: Option<&str>, tag: Option<&str>) -> Result<()> {
         let mut form = vec![("urls", link)];
         if let Some(p) = save_path {
             form.push(("savepath", p));
+        }
+        if let Some(t) = tag {
+            form.push(("tags", t));
         }
         let res = self
             .http
@@ -49,5 +64,21 @@ impl Qbit {
         }
 
         Ok(())
+    }
+
+    /// 태그가 붙은 토렌트만 조회한다. 메타데이터를 받기 전에는 빈 배열일 수 있다.
+    pub async fn info_by_tag(&self, tag: &str) -> Result<Vec<TorrentInfo>> {
+        self.http
+            .get(format!("{}/api/v2/torrents/info", self.base))
+            .header("Referer", &self.base)
+            .query(&[("tag", tag)])
+            .send()
+            .await
+            .context("qBittorrent에서 진행률을 조회하지 못했어요")?
+            .error_for_status()
+            .context("qBittorrent가 진행률 조회를 거절했어요")?
+            .json()
+            .await
+            .context("qBittorrent 응답을 해석하지 못했어요")
     }
 }

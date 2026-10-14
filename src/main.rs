@@ -4,6 +4,9 @@ mod hit;
 mod prowlarr;
 mod qbit;
 mod ui;
+mod watch;
+
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Result, bail};
 use clap::Parser;
@@ -54,8 +57,26 @@ async fn main() -> Result<()> {
         &settings.qbit_pass,
     )
     .await?;
-    qbit.add(hit.link().unwrap(), settings.save_path.as_deref())
-        .await?;
+    // add 는 해시를 돌려주지 않으므로, 우리만 아는 태그를 붙여 두고 그 태그로 조회한다.
+    let tag = args.watch.then(new_tag);
+    qbit.add(
+        hit.link().unwrap(),
+        settings.save_path.as_deref(),
+        tag.as_deref(),
+    )
+    .await?;
     println!("→ qBittorrent에 추가됨: {}", hit.title);
+
+    if let Some(tag) = tag {
+        watch::watch(&qbit, &tag).await?;
+    }
     Ok(())
+}
+
+fn new_tag() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("tget-{nanos}")
 }

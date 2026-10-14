@@ -37,7 +37,7 @@ pub fn print_hits(hits: &[Hit]) {
     }
 }
 
-fn human_size(bytes: u64) -> String {
+pub fn human_size(bytes: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
     let mut v = bytes as f64;
     let mut u = 0;
