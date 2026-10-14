@@ -1,0 +1,50 @@
+use std::path::PathBuf;
+
+use clap::Parser;
+
+/// 파일명으로 토렌트를 검색하고, 있으면 qBittorrent로 다운로드를 시작한다.
+#[derive(Parser, Debug)]
+#[command(version)]
+pub struct Args {
+    /// 검색할 파일명
+    pub query: String,
+
+    /// 보여줄 결과 수
+    #[arg(short, long, default_value_t = 10)]
+    pub limit: usize,
+
+    /// 최소 시더 수
+    #[arg(long, default_value_t = 1)]
+    pub min_seeders: u32,
+
+    /// 선택 없이 시더가 가장 많은 결과를 바로 받는다
+    #[arg(short, long)]
+    pub first: bool,
+
+    /// 결과만 보여주고 추가하지 않는다
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Prowlarr 대신 로컬 JSON 파일에서 검색 결과를 읽는다 (개발용)
+    #[arg(long)]
+    pub fixture: Option<PathBuf>,
+
+    #[arg(long, env = "PROWLARR_URL", default_value = "http://localhost:9696")]
+    pub prowlarr_url: String,
+
+    #[arg(long, env = "PROWLARR_API_KEY", hide_env_values = true)]
+    pub prowlarr_api_key: Option<String>,
+
+    /// 저장 경로 (qBittorrent 기준)
+    #[arg(long)]
+    pub save_path: Option<String>,
+
+    #[arg(long, env = "QBIT_URL", default_value = "http://localhost:8080")]
+    pub qbit_url: String,
+
+    #[arg(long, env = "QBIT_USER", default_value = "admin")]
+    pub qbit_user: String,
+
+    #[arg(long, env = "QBIT_PASS", hide_env_values = true, default_value = "")]
+    pub qbit_pass: String,
+}
