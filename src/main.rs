@@ -15,14 +15,12 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     let http = reqwest::Client::builder().cookie_store(true).build()?;
 
-    let mut hits = match &args.fixture {
+    let hits = match &args.fixture {
         Some(path) => prowlarr::load_fixture(path)?,
         None => prowlarr::search(&http, &args).await?,
     };
 
-    hits.retain(|h| h.seeders() >= args.min_seeders && h.link().is_some());
-    hits.sort_by(|a, b| b.seeders().cmp(&a.seeders()));
-    hits.truncate(args.limit);
+    let hits = hit::rank(hits, args.min_seeders, args.limit);
 
     if hits.is_empty() {
         bail!("'{}' 에 해당하는 토렌트를 찾지 못했어요", args.query);

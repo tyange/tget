@@ -47,3 +47,22 @@ fn human_size(bytes: u64) -> String {
     }
     format!("{v:.1}{}", UNITS[u])
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn human_size_units() {
+        assert_eq!(human_size(0), "0.0B");
+        assert_eq!(human_size(1023), "1023.0B");
+        assert_eq!(human_size(1024), "1.0KB");
+        assert_eq!(human_size(1536), "1.5KB");
+        assert_eq!(human_size(5 * 1024 * 1024 * 1024), "5.0GB");
+    }
+
+    #[test]
+    fn human_size_caps_at_tb() {
+        assert_eq!(human_size(2048 * 1024u64.pow(4)), "2048.0TB");
+    }
+}
