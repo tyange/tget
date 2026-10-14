@@ -29,8 +29,13 @@ pub struct Args {
     #[arg(long)]
     pub fixture: Option<PathBuf>,
 
-    #[arg(long, env = "PROWLARR_URL", default_value = "http://localhost:9696")]
-    pub prowlarr_url: String,
+    /// 설정 파일 경로 (기본: $XDG_CONFIG_HOME/tget/config.toml 또는 ~/.config/tget/config.toml)
+    #[arg(long)]
+    pub config: Option<PathBuf>,
+
+    /// Prowlarr 주소 (기본: http://localhost:9696)
+    #[arg(long, env = "PROWLARR_URL")]
+    pub prowlarr_url: Option<String>,
 
     #[arg(long, env = "PROWLARR_API_KEY", hide_env_values = true)]
     pub prowlarr_api_key: Option<String>,
@@ -39,12 +44,14 @@ pub struct Args {
     #[arg(long)]
     pub save_path: Option<String>,
 
-    #[arg(long, env = "QBIT_URL", default_value = "http://localhost:8080")]
-    pub qbit_url: String,
+    /// qBittorrent 주소 (기본: http://localhost:8080)
+    #[arg(long, env = "QBIT_URL")]
+    pub qbit_url: Option<String>,
 
-    #[arg(long, env = "QBIT_USER", default_value = "admin")]
-    pub qbit_user: String,
+    /// qBittorrent 사용자 이름 (기본: admin)
+    #[arg(long, env = "QBIT_USER")]
+    pub qbit_user: Option<String>,
 
-    #[arg(long, env = "QBIT_PASS", hide_env_values = true, default_value = "")]
-    pub qbit_pass: String,
+    #[arg(long, env = "QBIT_PASS", hide_env_values = true)]
+    pub qbit_pass: Option<String>,
 }

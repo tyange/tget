@@ -3,7 +3,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
-use crate::cli::Args;
+use crate::config::Settings;
 use crate::hit::Hit;
 
 /// 로컬 JSON 파일에서 검색 결과를 읽는다 (개발·테스트용).
@@ -14,16 +14,19 @@ pub fn load_fixture(path: &Path) -> Result<Vec<Hit>> {
 }
 
 /// Prowlarr API 로 검색한다.
-pub async fn search(http: &reqwest::Client, args: &Args) -> Result<Vec<Hit>> {
-    let api_key = args
+pub async fn search(http: &reqwest::Client, settings: &Settings, query: &str) -> Result<Vec<Hit>> {
+    let api_key = settings
         .prowlarr_api_key
         .as_deref()
         .context("PROWLARR_API_KEY 환경변수나 --prowlarr-api-key 가 필요해요")?;
-    let url = format!("{}/api/v1/search", args.prowlarr_url.trim_end_matches('/'));
+    let url = format!(
+        "{}/api/v1/search",
+        settings.prowlarr_url.trim_end_matches('/')
+    );
 
     http.get(url)
         .header("X-Api-Key", api_key)
-        .query(&[("query", args.query.as_str()), ("type", "search")])
+        .query(&[("query", query), ("type", "search")])
         .send()
         .await
         .context("Prowlarr에 연결하지 못했어요")?

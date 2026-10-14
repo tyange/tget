@@ -1,4 +1,5 @@
 mod cli;
+mod config;
 mod hit;
 mod prowlarr;
 mod qbit;
@@ -8,16 +9,18 @@ use anyhow::{Result, bail};
 use clap::Parser;
 
 use cli::Args;
+use config::Settings;
 use qbit::Qbit;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+    let settings = Settings::load(&args)?;
     let http = reqwest::Client::builder().cookie_store(true).build()?;
 
     let hits = match &args.fixture {
         Some(path) => prowlarr::load_fixture(path)?,
-        None => prowlarr::search(&http, &args).await?,
+        None => prowlarr::search(&http, &settings, &args.query).await?,
     };
 
     let hits = hit::rank(hits, args.min_seeders, args.limit);
@@ -44,8 +47,14 @@ async fn main() -> Result<()> {
         }
     };
 
-    let qbit = Qbit::login(http, &args.qbit_url, &args.qbit_user, &args.qbit_pass).await?;
-    qbit.add(hit.link().unwrap(), args.save_path.as_deref())
+    let qbit = Qbit::login(
+        http,
+        &settings.qbit_url,
+        &settings.qbit_user,
+        &settings.qbit_pass,
+    )
+    .await?;
+    qbit.add(hit.link().unwrap(), settings.save_path.as_deref())
         .await?;
     println!("→ qBittorrent에 추가됨: {}", hit.title);
     Ok(())
