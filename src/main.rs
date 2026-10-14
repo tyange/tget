@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{self, Write};
 
 use anyhow::{Result, bail};
 use clap::Parser;
@@ -18,6 +19,14 @@ struct Args {
     /// 최소 시더 수
     #[arg(long, default_value_t = 1)]
     min_seeders: u32,
+
+    /// 선택 없이 시더가 가장 많은 결과를 바로 받는다
+    #[arg(short, long)]
+    first: bool,
+
+    /// 결과만 보여주고 추가하지 않는다
+    #[arg(long)]
+    dry_run: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,7 +69,45 @@ fn main() -> Result<()> {
     }
 
     print_hits(&hits);
+
+    if args.dry_run {
+        return Ok(());
+    }
+
+    let hit = if args.first {
+        &hits[0]
+    } else {
+        match prompt_choice(hits.len())? {
+            Some(i) => &hits[i],
+            None => {
+                println!("취소했어요");
+                return Ok(());
+            }
+        }
+    };
+
+    println!("→ 선택: {}", hit.title);
+    println!("  링크: {}", hit.link().unwrap());
     Ok(())
+}
+
+fn prompt_choice(max: usize) -> Result<Option<usize>> {
+    loop {
+        print!("선택 (1-{max}, 엔터=취소)> ");
+        io::stdout().flush()?;
+
+        let mut line = String::new();
+        io::stdin().read_line(&mut line)?;
+        let line = line.trim();
+
+        if line.is_empty() || line.eq_ignore_ascii_case("q") {
+            return Ok(None);
+        }
+        match line.parse::<usize>() {
+            Ok(n) if (1..=max).contains(&n) => return Ok(Some(n - 1)),
+            _ => println!("1-{max} 사이 숫자를 입력하세요"),
+        }
+    }
 }
 
 fn print_hits(hits: &[Hit]) {
