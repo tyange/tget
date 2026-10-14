@@ -8,7 +8,7 @@ mod watch;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 
 use cli::Args;
@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
     // add 는 해시를 돌려주지 않으므로, 우리만 아는 태그를 붙여 두고 그 태그로 조회한다.
     let tag = args.watch.then(new_tag);
     qbit.add(
-        hit.link().unwrap(),
+        hit.link().context("선택한 결과에 받을 링크가 없어요")?,
         settings.save_path.as_deref(),
         tag.as_deref(),
     )

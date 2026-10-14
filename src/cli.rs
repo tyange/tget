@@ -41,6 +41,7 @@ pub struct Args {
     #[arg(long, env = "PROWLARR_URL")]
     pub prowlarr_url: Option<String>,
 
+    /// Prowlarr API 키 (설정 파일이나 환경변수 권장)
     #[arg(long, env = "PROWLARR_API_KEY", hide_env_values = true)]
     pub prowlarr_api_key: Option<String>,
 
@@ -56,6 +57,7 @@ pub struct Args {
     #[arg(long, env = "QBIT_USER")]
     pub qbit_user: Option<String>,
 
+    /// qBittorrent 비밀번호 (설정 파일이나 환경변수 권장)
     #[arg(long, env = "QBIT_PASS", hide_env_values = true)]
     pub qbit_pass: Option<String>,
 }
